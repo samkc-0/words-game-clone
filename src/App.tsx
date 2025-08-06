@@ -18,6 +18,7 @@ type Action =
 const secret = 'apple'
 const MAX_GUESSES = 6
 const WORD_LENGTH = 5
+const ALPHABET = 'abcdefghijklmnopqrstuvwxyz'
 
 const initialState: State = {
   guesses: [],
@@ -87,6 +88,15 @@ export function App() {
       dispatch({ type: 'ADD_LETTER', letter: e.key.toLowerCase() })
     }
   }
+  const getGuessedLetters = () => {
+    const letters = new Set<string>()
+    for (const guess of state.guesses) {
+      for (const c of guess) {
+        letters.add(c)
+      }
+    }
+    return letters
+  }
 
   return (
     <div className="App font-mono" onKeyDown={handleKeyPress} tabIndex={0} autoFocus>
@@ -99,18 +109,13 @@ export function App() {
       }
       return <div className="lineheight-2" key={i}>⬜⬜⬜⬜⬜</div>
     })}
+    {ALPHABET.split('').map(c => <button disabled={getGuessedLetters().has(c)} className="opacity-50 hover:opacity-100" key={c} onClick={() => dispatch({ type: 'ADD_LETTER', letter: c })}>{c}</button>)}
+    <button onClick={() => dispatch({ type: 'SUBMIT_GUESS' })}>Submit</button>
+    <div>{state.status}</div>
     </div>
   )
 }
 
-interface CellProps {
-  letter: string
-  i: number
-  className: string
-}
-function Cell({ letter, i, className }: CellProps) {
-  return <div className={className}>{letter.toUpperCase()}</div>
-}
 
 function validateStoredState(parsed: State): boolean {
     if (!Array.isArray(parsed.guesses)) {
