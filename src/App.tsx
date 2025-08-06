@@ -1,4 +1,11 @@
-import { useReducer, KeyboardEvent, useEffect, useState } from 'react'
+import {
+  useReducer,
+  KeyboardEvent,
+  useEffect,
+  useState,
+  JSX,
+  Dispatch,
+} from 'react'
 import { Text } from '@react-three/drei'
 import { Canvas, useThree } from '@react-three/fiber'
 
@@ -21,7 +28,7 @@ type Action =
 
 const MAX_GUESSES = 6
 const WORD_LENGTH = 5
-const ALPHABET = 'abcdefghijklmnopqrstuvwxyzñáéíóúáéíóúüü'.split('')
+const ALPHABET = 'abcdefghijklmnopqrstuvwxyzñáéíóúü'.split('')
 
 const initialState: State = {
   guesses: [],
@@ -41,7 +48,7 @@ function init(initialState: State): State {
     console.log('New day, new game!')
     return initialState
   }
-  
+
   const storedState = localStorage.getItem('state')
   if (storedState) {
     try {
@@ -59,7 +66,6 @@ function init(initialState: State): State {
   return initialState
 }
 
-// this needs to be fixed so the word can be loaded from cache properly
 function reducer(state: State, action: Action): State {
   let newState: State
   if (action.type === 'SET_WORD') {
@@ -127,9 +133,7 @@ function Rig() {
 export function App() {
   const [state, dispatch] = useReducer(reducer, initialState, init)
   const [pendingAccent, setPendingAccent] = useState<string | null>(null)
-  const [guessedLetters, setGuessedLetters] = useState<Set<string>>(
-   new Set() 
-  )
+  const [guessedLetters, setGuessedLetters] = useState<Set<string>>(new Set())
   useEffect(() => {
     if (state.word != null) return
     fetch('/api/daily')
@@ -143,9 +147,8 @@ export function App() {
   }, [])
 
   useEffect(() => {
-     const out = new Set(["a"]) 
-     setGuessedLetters(out)
-  }, [state])
+    setGuessedLetters(new Set(state.guesses.join('')))
+  }, [state.guesses])
 
   const handleKeyPress = (e: KeyboardEvent) => {
     if (pendingAccent) {
@@ -182,11 +185,10 @@ export function App() {
       tabIndex={0}
       autoFocus
       onKeyDown={handleKeyPress}
-      className="flex flex-col h-full bg-pink-400"
-      style= {{ height: '100vh' }}
+      className="flex flex-col h-full"
+      style={{ height: '100vh', backgroundColor: 'black' }}
     >
       <Canvas orthographic style={{ height: '66.67vh' }}>
-        <color attach="background" args={['black']} />
         <Rig />
         <ambientLight intensity={0.7} />
         <pointLight position={[0, 0, 5]} />
@@ -206,8 +208,10 @@ export function App() {
           return <Row key={i} guess="" rowIndex={i} />
         })}
       </Canvas>
-      <div className="flex justify-center text-amber">{guessedLeeters}</div> 
-
+      <Keyboard
+        dispatch={dispatch}
+        guessedLetters={Array.from(guessedLetters)}
+      />
     </div>
   )
 }
@@ -255,13 +259,13 @@ function Row({ compareWord = null, guess, rowIndex }: RowProps) {
     i * letterSpacing - ((WORD_LENGTH - 1) * letterSpacing) / 2
 
   const determineBoxColor = (i: number) => {
-    if (compareWord == null) return '#d3d6da' // Light gray for empty/current row
+    if (compareWord == null) return '#d3d6da'
     if (guess[i] === compareWord[i]) {
-      return 'lime' // Correct (Green)
+      return 'lime'
     } else if (compareWord.includes(guess[i])) {
-      return '#FFEA00' // Present (Yellow)
+      return '#FFEA00'
     }
-    return '#787c7e' // Absent (Dark Gray)
+    return '#787c7e'
   }
 
   const letterColor = compareWord != null ? 'white' : 'black'
@@ -341,6 +345,74 @@ function composeAccent(accent: string, letter: string): string | null {
   }
 
   return map[accent]?.[letter] ?? null
+}
+
+function Keyboard({
+  dispatch,
+  guessedLetters,
+}: {
+  dispatch: Dispatch<Action>
+  guessedLetters: string[]
+}): JSX.Element {
+  const getKeyColor = (letter: string) => {
+    return guessedLetters.includes(letter) ? 'bg-gray-500' : 'bg-gray-200'
+  }
+
+  return (
+    <div className="fixed top-2/3 flex flex-col items-center justify-center h-[40vh] w-full gap-1 p-2">
+      <div className="flex gap-0.5 w-full">
+        {['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'].map((letter) => (
+          <button
+            key={letter}
+            onClick={() => dispatch({ type: 'ADD_LETTER', letter })}
+            className={`keyboard-key flex-1 text-lg md:text-base h-12 ${getKeyColor(
+              letter
+            )}`}
+          >
+            {letter.toUpperCase()}
+          </button>
+        ))}
+      </div>
+      <div className="flex gap-0.5 w-full">
+        {['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'ñ'].map((letter) => (
+          <button
+            key={letter}
+            onClick={() => dispatch({ type: 'ADD_LETTER', letter })}
+            className={`keyboard-key flex-1 text-lg md:text-base h-12 ${getKeyColor(
+              letter
+            )}`}
+          >
+            {letter.toUpperCase()}
+          </button>
+        ))}
+      </div>
+      <div className="flex gap-0.5 w-full">
+        <button
+          onClick={() => dispatch({ type: 'SUBMIT_GUESS' })}
+          className="keyboard-key enter-key flex-[1.5] text-lg md:text-base h-12 bg-gray-200"
+        >
+          ENTER
+        </button>
+        {['z', 'x', 'c', 'v', 'b', 'n', 'm'].map((letter) => (
+          <button
+            key={letter}
+            onClick={() => dispatch({ type: 'ADD_LETTER', letter })}
+            className={`keyboard-key flex-1 text-lg md:text-base h-12 ${getKeyColor(
+              letter
+            )}`}
+          >
+            {letter.toUpperCase()}
+          </button>
+        ))}
+        <button
+          onClick={() => dispatch({ type: 'REMOVE_LETTER' })}
+          className="keyboard-key backspace-key flex-[1.5] text-lg md:text-base h-12 bg-gray-200"
+        >
+          ⌫
+        </button>
+      </div>
+    </div>
+  )
 }
 
 export default App
