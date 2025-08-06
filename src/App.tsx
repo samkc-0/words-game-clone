@@ -41,7 +41,7 @@ function init(initialState: State): State {
     console.log('New day, new game!')
     return initialState
   }
-
+  
   const storedState = localStorage.getItem('state')
   if (storedState) {
     try {
@@ -127,7 +127,9 @@ function Rig() {
 export function App() {
   const [state, dispatch] = useReducer(reducer, initialState, init)
   const [pendingAccent, setPendingAccent] = useState<string | null>(null)
-
+  const [guessedLetters, setGuessedLetters] = useState<Set<string>>(
+   new Set() 
+  )
   useEffect(() => {
     if (state.word != null) return
     fetch('/api/daily')
@@ -139,6 +141,11 @@ export function App() {
         console.error('Error fetching daily word:', error)
       })
   }, [])
+
+  useEffect(() => {
+     const out = new Set(["a"]) 
+     setGuessedLetters(out)
+  }, [state])
 
   const handleKeyPress = (e: KeyboardEvent) => {
     if (pendingAccent) {
@@ -171,12 +178,15 @@ export function App() {
   }
   return (
     <div
-      style={{ width: '100vw', height: '100vh', backgroundColor: '#f0f0f0' }}
+      id="root"
       tabIndex={0}
       autoFocus
       onKeyDown={handleKeyPress}
+      className="flex flex-col h-full bg-pink-400"
+      style= {{ height: '100vh' }}
     >
-      <Canvas orthographic>
+      <Canvas orthographic style={{ height: '66.67vh' }}>
+        <color attach="background" args={['black']} />
         <Rig />
         <ambientLight intensity={0.7} />
         <pointLight position={[0, 0, 5]} />
@@ -196,6 +206,8 @@ export function App() {
           return <Row key={i} guess="" rowIndex={i} />
         })}
       </Canvas>
+      <div className="flex justify-center text-amber">{guessedLeeters}</div> 
+
     </div>
   )
 }
