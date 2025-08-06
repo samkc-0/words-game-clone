@@ -26,10 +26,53 @@ const initialState: State = {
   solution: secret,
 }
 
+function validateStoredState(parsed: State): boolean {
+    if (!Array.isArray(parsed.guesses)) {
+      console.log("storedState.guesses was not an array")
+      return false
+    } 
+    if (parsed.guesses.length > MAX_GUESSES) 
+      {
+        console.log("storedState.guesses was longer than MAX_GUESSES")
+    return false
+      }
+    if (parsed.guesses.every((guess: string) => typeof guess !== 'string' || guess.length > WORD_LENGTH))
+      {
+        console.log("storedState.guesses contained an invalid guess")
+    return false
+      }
+    if (typeof parsed.input !== 'string'){
+      console.log("storedState.input was not a string")
+      return false
+    }
+    if (typeof parsed.status !== 'string' ){
+      console.log("storedState.status was not a string")
+      return false
+    } 
+    if (typeof parsed.solution !== 'string'){
+      console.log("storedState.solution was not a string")
+      return false
+    }
+    if (parsed.solution.length !== WORD_LENGTH) {
+      console.log(`storedState.solution has ${parsed.solution.length} letters, want ${WORD_LENGTH}`) 
+      return false
+    }
+    if (!['playing', 'won', 'lost'].includes(parsed.status)){
+      console.log(`storedState.status was ${parsed.status}, want 'playing', 'won', or 'lost'`)
+      return false
+    }
+    return true
+}
+
 function init(initialState: State): State {
     const storedState = localStorage.getItem('state');
-    if (storedState) 
-      return JSON.parse(storedState);
+    if (storedState) {
+      const parsed = JSON.parse(storedState)
+      if (validateStoredState(parsed)) {
+        return parsed
+      }
+    }
+    console.log("Stored state was not found or invalid, using defaults")
     return initialState
 }
 
@@ -85,11 +128,11 @@ export function App() {
   }
 
   return (
-    <div className="App" onKeyDown={handleKeyPress} tabIndex={0} autoFocus>
+    <div className="App font-mono" onKeyDown={handleKeyPress} tabIndex={0} autoFocus>
     <h1>{state.status}</h1>
     {(new Array(MAX_GUESSES)).fill(0).map((_, i) => {
       if (i === state.guesses.length) {
-        return <div className="font-mono" key={i}>{state.input}</div>
+        return <div key={i}>{state.input.toUpperCase()}</div>
       }
       else if (i < state.guesses.length) {
         return <div key={i}>{evalGuess(state.guesses[i], state.solution)}</div>
