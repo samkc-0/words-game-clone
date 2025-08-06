@@ -77,6 +77,7 @@ function init(initialState: State): State {
 }
 
 function reducer(state: State, action: Action): State {
+  if (state.status !== 'playing') return state
   let newState: State 
   switch (action.type) {
     case 'ADD_LETTER':
