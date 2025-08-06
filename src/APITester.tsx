@@ -20,7 +20,6 @@ export function APITester() {
       responseInputRef.current!.value = String(error);
     }
   };
-
   return (
     <div className="api-tester">
       <form onSubmit={testEndpoint} className="endpoint-row">
