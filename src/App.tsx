@@ -1,13 +1,19 @@
-import { useReducer, KeyboardEvent } from 'react'
-import "./index.css"
+import { useReducer, KeyboardEvent, useEffect } from 'react'
+import { Text } from '@react-three/drei'
+import { Canvas, useThree } from '@react-three/fiber'
 
+import "./index.css"
 type Status = 'playing' | 'won' | 'lost'
+const PERSISTENT = true
+
+function getDailyWord(): string {
+  return "apple"
+}
 
 interface State {
   guesses: string[]
   input: string
   status: Status
-  solution: string
 }
 
 type Action =
@@ -15,7 +21,6 @@ type Action =
   | { type: 'REMOVE_LETTER' }
   | { type: 'SUBMIT_GUESS' }
 
-const secret = 'apple'
 const MAX_GUESSES = 6
 const WORD_LENGTH = 5
 const ALPHABET = 'abcdefghijklmnopqrstuvwxyz'
@@ -24,9 +29,9 @@ const initialState: State = {
   guesses: [],
   input: '',
   status: 'playing',
-  solution: secret,
 }
 function init(initialState: State): State {
+    if (!PERSISTENT) return initialState
     const storedState = localStorage.getItem('state');
     if (storedState) {
       const parsed = JSON.parse(storedState)
@@ -50,7 +55,7 @@ function reducer(state: State, action: Action): State {
       break
     case 'SUBMIT_GUESS':
       if (state.input.length !== WORD_LENGTH) return state
-      if (state.input === state.solution) {
+      if (state.input === getDailyWord()) {
         newState = { ...state, guesses: [...state.guesses, state.input], status: 'won', input: '' }
       }
       else if (state.guesses.length + 1 === MAX_GUESSES) {
@@ -61,7 +66,7 @@ function reducer(state: State, action: Action): State {
     default:
       return state
   }
-  console.log("Saving state:", {...newState, solution: secret.split("").map(c => "*").join("")})
+  console.log("Saving state:", newState)
   localStorage.setItem('state', JSON.stringify(newState))
   return newState
 }
@@ -76,6 +81,22 @@ function evalGuess(guess: string, solution: string) {
   }).join('')
 }
 
+function Rig() {
+  const { camera, size } = useThree()
+  useEffect(() => {
+    const PADDING = 2
+    const LETTER_SPACING = 1.2
+    const ROW_SPACING = 1
+    // Assuming letter width and height are both 1
+    const contentWidth = (WORD_LENGTH - 1) * LETTER_SPACING + 1 + PADDING
+    const contentHeight = (MAX_GUESSES - 1) * ROW_SPACING + 1 + PADDING
+    const zoom = Math.min(size.width / contentWidth, size.height / contentHeight)
+    ;(camera as any).zoom = zoom
+    camera.updateProjectionMatrix()
+  }, [camera, size])
+  return null
+}
+
 export function App() {
   const [state, dispatch] = useReducer(reducer, initialState, init)
 
@@ -88,71 +109,89 @@ export function App() {
       dispatch({ type: 'ADD_LETTER', letter: e.key.toLowerCase() })
     }
   }
-  const getGuessedLetters = () => {
-    const letters = new Set<string>()
-    for (const guess of state.guesses) {
-      for (const c of guess) {
-        letters.add(c)
-      }
-    }
-    return letters
-  }
 
   return (
-    <div className="App font-mono" onKeyDown={handleKeyPress} tabIndex={0} autoFocus>
-    {(new Array(MAX_GUESSES)).fill(0).map((_, i) => {
-      if (i === state.guesses.length) {
-        return <div className="lineheight-2" key={i}>{state.input.padEnd(WORD_LENGTH, '⬜')}</div>
-      }
-      else if (i < state.guesses.length) {
-        return <div className="lineheight-2" key={i}>{evalGuess(state.guesses[i], state.solution)}</div>
-      }
-      return <div className="lineheight-2" key={i}>⬜⬜⬜⬜⬜</div>
-    })}
-    {ALPHABET.split('').map(c => <button disabled={getGuessedLetters().has(c)} className="opacity-50 hover:opacity-100" key={c} onClick={() => dispatch({ type: 'ADD_LETTER', letter: c })}>{c}</button>)}
-    <button onClick={() => dispatch({ type: 'SUBMIT_GUESS' })}>Submit</button>
-    <div>{state.status}</div>
+    <div style={{ width: '100vw', height: '100vh' }} tabIndex={0} autoFocus onKeyDown={handleKeyPress}>
+      <Canvas orthographic>
+        <Rig />
+        <ambientLight />
+        <pointLight position={[10, 10, 10]} />
+        {Array.from({ length: MAX_GUESSES }, (_, i) => {
+          if (i < state.guesses.length) 
+            return <Row key={i} guess={state.guesses[i] ?? ''} rowIndex={i} colorize={true} />
+          else if (i === state.guesses.length) {
+            return <Row key={i} guess={state.input} rowIndex={i} colorize={false} /> 
+          }
+          return null
+        })}
+      </Canvas>
     </div>
   )
 }
 
 
+function Letter({ letter, color = 'black', x = 0 }: { letter: string; color?: string, x?: number }) {
+  return (
+    <Text color={color} position={[x, 0, 0]} fontSize={1}>
+      {letter}
+    </Text>
+  )
+}
+
+
+function Row({ guess='', rowIndex=0, colorize = false}: { guess: string, rowIndex: number, colorize: boolean }) {
+  const letterSpacing = 1.2
+  const rowY = (MAX_GUESSES - 1) / 2 - rowIndex
+  const getX = (i: number) => i * letterSpacing - ((WORD_LENGTH - 1) * letterSpacing) / 2
+  const determineColor = (i: number) => {
+    if (guess[i] === getDailyWord()[i])
+      return 'lime'
+    else if (getDailyWord().includes(guess[i]))
+      return 'peru'
+    return 'silver'
+  }
+  return (
+    <group position={[0, rowY, 0]}>
+      {guess.padEnd(WORD_LENGTH).split('').map((c, i) => <Letter x={getX(i)} key={i} letter={c||' '} color={colorize ? determineColor(i) : 'black'} />)}
+    </group>
+  )
+}
+
 function validateStoredState(parsed: State): boolean {
-    if (!Array.isArray(parsed.guesses)) {
-      console.log("storedState.guesses was not an array")
-      return false
-    } 
-    if (parsed.guesses.length > MAX_GUESSES) 
-      {
-        console.log("storedState.guesses was longer than MAX_GUESSES")
+  const isValidGuess = (guess: any) =>
+    typeof guess === 'string' && guess.length === getDailyWord().length
+
+  if (!Array.isArray(parsed.guesses)) {
+    console.log("storedState.guesses was not an array")
     return false
-      }
-    if (parsed.guesses.every((guess: string) => typeof guess !== 'string' || guess.length > WORD_LENGTH))
-      {
-        console.log("storedState.guesses contained an invalid guess")
+  }
+
+  if (parsed.guesses.length > MAX_GUESSES) {
+    console.log("storedState.guesses was longer than MAX_GUESSES")
     return false
-      }
-    if (typeof parsed.input !== 'string'){
-      console.log("storedState.input was not a string")
-      return false
-    }
-    if (typeof parsed.status !== 'string' ){
-      console.log("storedState.status was not a string")
-      return false
-    } 
-    if (typeof parsed.solution !== 'string'){
-      console.log("storedState.solution was not a string")
-      return false
-    }
-    if (parsed.solution.length !== WORD_LENGTH) {
-      console.log(`storedState.solution has ${parsed.solution.length} letters, want ${WORD_LENGTH}`) 
-      return false
-    }
-    if (!['playing', 'won', 'lost'].includes(parsed.status)){
-      console.log(`storedState.status was ${parsed.status}, want 'playing', 'won', or 'lost'`)
-      return false
-    }
-    return true
+  }
+
+  if (!parsed.guesses.every(isValidGuess)) {
+    console.log("storedState.guesses contained an invalid guess")
+    return false
+  }
+
+  if (typeof parsed.input !== 'string') {
+    console.log("storedState.input was not a string")
+    return false
+  }
+
+  if (typeof parsed.status !== 'string') {
+    console.log("storedState.status was not a string")
+    return false
+  }
+
+  if (!['playing', 'won', 'lost'].includes(parsed.status)) {
+    console.log(`storedState.status was ${parsed.status}, want 'playing', 'won', or 'lost'`)
+    return false
+  }
+
+  return true
 }
 
 

@@ -11,10 +11,13 @@
     "start": "NODE_ENV=production bun src/index.tsx"
   },
   "dependencies": {
+    "@react-three/drei": "^10.6.1",
+    "@react-three/fiber": "^9.3.0",
+    "bun-plugin-tailwind": "latest",
     "react": "^19",
     "react-dom": "^19",
     "tailwindcss": "^4",
-    "bun-plugin-tailwind": "latest"
+    "three": "^0.179.1"
   },
   "devDependencies": {
     "@types/react": "^19",
