@@ -31,25 +31,44 @@ const initialState: State = {
 }
 function init(initialState: State): State {
   if (!PERSISTENT) return initialState
+
+  const today = new Date().toISOString().slice(0, 10)
+  const lastPlayed = localStorage.getItem('lastPlayed')
+
+  if (lastPlayed !== today) {
+    localStorage.removeItem('state')
+    localStorage.setItem('lastPlayed', today)
+    console.log('New day, new game!')
+    return initialState
+  }
+
   const storedState = localStorage.getItem('state')
   if (storedState) {
-    const parsed = JSON.parse(storedState)
-    if (validateStoredState(parsed)) {
-      return parsed
+    try {
+      const parsed = JSON.parse(storedState)
+      if (validateStoredState(parsed)) {
+        return parsed
+      }
+    } catch (e) {
+      console.error('Error parsing stored state:', e)
+      // Fallback to initial state if parsing fails
     }
   }
+
   console.log('Stored state was not found or invalid, using defaults')
   return initialState
 }
 
 // this needs to be fixed so the word can be loaded from cache properly
 function reducer(state: State, action: Action): State {
+  let newState: State
   if (action.type === 'SET_WORD') {
-    return { ...state, word: action.word }
+    newState = { ...state, word: action.word }
+    localStorage.setItem('state', JSON.stringify(newState))
+    return newState
   }
   if (state.word == null) return state
   if (state.status !== 'playing') return state
-  let newState: State
   switch (action.type) {
     case 'ADD_LETTER':
       if (state.input.length >= WORD_LENGTH) return state
@@ -110,6 +129,7 @@ export function App() {
   const [pendingAccent, setPendingAccent] = useState<string | null>(null)
 
   useEffect(() => {
+    if (state.word != null) return
     fetch('/api/daily')
       .then((res) => res.json())
       .then((data) =>
