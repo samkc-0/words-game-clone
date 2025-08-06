@@ -245,9 +245,9 @@ function Row({ compareWord = null, guess, rowIndex }: RowProps) {
   const determineBoxColor = (i: number) => {
     if (compareWord == null) return '#d3d6da' // Light gray for empty/current row
     if (guess[i] === compareWord[i]) {
-      return '#6aaa64' // Correct (Green)
+      return 'lime' // Correct (Green)
     } else if (compareWord.includes(guess[i])) {
-      return '#c9b458' // Present (Yellow)
+      return '#FFEA00' // Present (Yellow)
     }
     return '#787c7e' // Absent (Dark Gray)
   }
