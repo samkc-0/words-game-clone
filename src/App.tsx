@@ -188,7 +188,7 @@ export function App() {
       className="flex flex-col h-full"
       style={{ height: '100vh', backgroundColor: 'black' }}
     >
-      <Canvas orthographic style={{ height: '66.67vh' }}>
+      <Canvas orthographic style={{ height: '66.67vh', position: 'fixed' }}>
         <Rig />
         <ambientLight intensity={0.7} />
         <pointLight position={[0, 0, 5]} />
