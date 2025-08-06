@@ -17,6 +17,8 @@ type Action =
 
 const secret = 'apple'
 const MAX_GUESSES = 6
+const WORD_LENGTH = 5
+
 const initialState: State = {
   guesses: [],
   input: '',
@@ -25,35 +27,38 @@ const initialState: State = {
 }
 
 function init(initialState: State): State {
-    const storedStatus = localStorage.getItem('status');
-    const status: Status =
-        storedStatus === 'won' || storedStatus === 'lost' || storedStatus === 'playing'
-        ? storedStatus
-        : 'playing';
-    return { ...initialState, status };
+    const storedState = localStorage.getItem('state');
+    if (storedState) 
+      return JSON.parse(storedState);
+    return initialState
 }
 
 function reducer(state: State, action: Action): State {
+  let newState: State 
   switch (action.type) {
     case 'ADD_LETTER':
-      if (state.input.length >= 5) return state
-      return { ...state, input: state.input + action.letter }
+      if (state.input.length >= WORD_LENGTH) return state
+      newState = { ...state, input: state.input + action.letter }
+      break
     case 'REMOVE_LETTER':
-      return { ...state, input: state.input.slice(0, -1) }
+      newState = { ...state, input: state.input.slice(0, -1) }
+      break
     case 'SUBMIT_GUESS':
-      if (state.input.length !== 5) return state
+      if (state.input.length !== WORD_LENGTH) return state
       if (state.input === state.solution) {
-        localStorage.setItem('status', 'won')
-        return { ...state, guesses: [...state.guesses, state.input], status: 'won', input: '' }
+        newState = { ...state, guesses: [...state.guesses, state.input], status: 'won', input: '' }
       }
-      if (state.guesses.length + 1 === MAX_GUESSES) {
-        localStorage.setItem('status', 'lost')
-        return { ...state, guesses: [...state.guesses, state.input], status: 'lost', input: '' }
+      else if (state.guesses.length + 1 === MAX_GUESSES) {
+        newState = { ...state, guesses: [...state.guesses, state.input], status: 'lost', input: '' }
       }
-      return { ...state, guesses: [...state.guesses, state.input], input: '' }
+      else newState = { ...state, guesses: [...state.guesses, state.input], input: '' }
+      break
     default:
       return state
   }
+  console.log("Setting state", newState)
+  localStorage.setItem('state', JSON.stringify(newState))
+  return newState
 }
 
 function evalGuess(guess: string, solution: string) {
@@ -80,7 +85,7 @@ export function App() {
   }
 
   return (
-    <div className="App" onKeyDown={handleKeyPress} tabIndex={0}>
+    <div className="App" onKeyDown={handleKeyPress} tabIndex={0} autoFocus>
     <h1>{state.status}</h1>
     {(new Array(MAX_GUESSES)).fill(0).map((_, i) => {
       if (i === state.guesses.length) {
