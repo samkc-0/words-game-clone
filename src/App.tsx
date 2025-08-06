@@ -81,8 +81,7 @@ function reducer(state: State, action: Action): State {
   switch (action.type) {
     case 'ADD_LETTER':
       if (state.input.length >= WORD_LENGTH) return state
-      newState = { ...state, input: state.input + action.letter }
-      break
+      return { ...state, input: state.input + action.letter }
     case 'REMOVE_LETTER':
       newState = { ...state, input: state.input.slice(0, -1) }
       break
