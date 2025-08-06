@@ -84,12 +84,10 @@ function evalGuess(guess: string, solution: string) {
 function Rig() {
   const { camera, size } = useThree()
   useEffect(() => {
-    const PADDING = 2
-    const LETTER_SPACING = 1.2
-    const ROW_SPACING = 1
-    // Assuming letter width and height are both 1
-    const contentWidth = (WORD_LENGTH - 1) * LETTER_SPACING + 1 + PADDING
-    const contentHeight = (MAX_GUESSES - 1) * ROW_SPACING + 1 + PADDING
+    const PADDING = 1.5
+    const SPACING = 1.2
+    const contentWidth = WORD_LENGTH * SPACING - (SPACING - 1) + PADDING
+    const contentHeight = MAX_GUESSES * SPACING - (SPACING - 1) + PADDING
     const zoom = Math.min(size.width / contentWidth, size.height / contentHeight)
     ;(camera as any).zoom = zoom
     camera.updateProjectionMatrix()
@@ -111,18 +109,18 @@ export function App() {
   }
 
   return (
-    <div style={{ width: '100vw', height: '100vh' }} tabIndex={0} autoFocus onKeyDown={handleKeyPress}>
+    <div style={{ width: '100vw', height: '100vh', backgroundColor: '#f0f0f0' }} tabIndex={0} autoFocus onKeyDown={handleKeyPress}>
       <Canvas orthographic>
         <Rig />
-        <ambientLight />
-        <pointLight position={[10, 10, 10]} />
+        <ambientLight intensity={0.7} />
+        <pointLight position={[0, 0, 5]} />
         {Array.from({ length: MAX_GUESSES }, (_, i) => {
           if (i < state.guesses.length) 
             return <Row key={i} guess={state.guesses[i] ?? ''} rowIndex={i} colorize={true} />
           else if (i === state.guesses.length) {
             return <Row key={i} guess={state.input} rowIndex={i} colorize={false} /> 
           }
-          return null
+          return <Row key={i} guess="" rowIndex={i} colorize={false} />
         })}
       </Canvas>
     </div>
@@ -130,31 +128,50 @@ export function App() {
 }
 
 
-function Letter({ letter, color = 'black', x = 0 }: { letter: string; color?: string, x?: number }) {
-  return (
-    <Text color={color} position={[x, 0, 0]} fontSize={1}>
-      {letter}
-    </Text>
-  )
+function Letter({ letter, letterColor = 'black', boxColor = 'lightgray', x = 0 }: { letter: string; letterColor?: string, boxColor?: string, x?: number }) {
+    return (
+        <group position={[x, 0, 0]}>
+            <mesh>
+                <boxGeometry args={[1, 1, 1]} />
+                <meshStandardMaterial color={boxColor} />
+            </mesh>
+            <Text color={letterColor} position={[0, 0, 0.6]} fontSize={0.8} anchorX="center" anchorY="middle">
+                {letter.toUpperCase()}
+            </Text>
+        </group>
+    )
 }
 
 
-function Row({ guess='', rowIndex=0, colorize = false}: { guess: string, rowIndex: number, colorize: boolean }) {
-  const letterSpacing = 1.2
-  const rowY = (MAX_GUESSES - 1) / 2 - rowIndex
-  const getX = (i: number) => i * letterSpacing - ((WORD_LENGTH - 1) * letterSpacing) / 2
-  const determineColor = (i: number) => {
-    if (guess[i] === getDailyWord()[i])
-      return 'lime'
-    else if (getDailyWord().includes(guess[i]))
-      return 'peru'
-    return 'silver'
-  }
-  return (
-    <group position={[0, rowY, 0]}>
-      {guess.padEnd(WORD_LENGTH).split('').map((c, i) => <Letter x={getX(i)} key={i} letter={c||' '} color={colorize ? determineColor(i) : 'black'} />)}
-    </group>
-  )
+function Row({ guess = '', rowIndex = 0, colorize = false }: { guess: string, rowIndex: number, colorize: boolean }) {
+    const letterSpacing = 1.2
+    const rowY = (MAX_GUESSES / 2 - 0.5) * letterSpacing - rowIndex * letterSpacing
+    const getX = (i: number) => i * letterSpacing - ((WORD_LENGTH - 1) * letterSpacing) / 2
+
+    const determineBoxColor = (i: number) => {
+        if (!colorize) return '#d3d6da' // Light gray for empty/current row
+        if (guess[i] === getDailyWord()[i]) {
+            return '#6aaa64' // Correct (Green)
+        } else if (getDailyWord().includes(guess[i])) {
+            return '#c9b458' // Present (Yellow)
+        }
+        return '#787c7e' // Absent (Dark Gray)
+    }
+
+    const letterColor = colorize ? 'white' : 'black'
+
+    return (
+        <group position={[0, rowY, 0]}>
+            {guess.padEnd(WORD_LENGTH).split('').map((c, i) =>
+                <Letter
+                    x={getX(i)}
+                    key={i}
+                    letter={c || ' '}
+                    boxColor={determineBoxColor(i)}
+                    letterColor={letterColor}
+                />)}
+        </group>
+    )
 }
 
 function validateStoredState(parsed: State): boolean {
