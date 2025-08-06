@@ -1,0 +1,31 @@
+version: "3.8"
+
+services:
+  wordgame:
+    image: wordgame-app 
+    container_name: wordgame
+    expose:
+      - "3000"
+    networks:
+      - caddy_net
+
+  caddy:
+    image: caddy:latest
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - caddy_net
+
+networks:
+  caddy_net:
+
+volumes:
+  caddy_data:
+  caddy_config:

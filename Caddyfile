@@ -1,0 +1,3 @@
+wordgame.pug.homes
+
+reverse_proxy wordgame:3000
