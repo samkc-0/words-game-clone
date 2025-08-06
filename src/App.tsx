@@ -1,4 +1,4 @@
-import { useReducer, KeyboardEvent, useEffect } from 'react'
+import { useReducer, KeyboardEvent, useEffect, useState } from 'react'
 import { Text } from '@react-three/drei'
 import { Canvas, useThree } from '@react-three/fiber'
 
@@ -97,14 +97,32 @@ function Rig() {
 
 export function App() {
   const [state, dispatch] = useReducer(reducer, initialState, init)
+  const [pendingAccent, setPendingAccent] = useState<string|null>(null)
 
   const handleKeyPress = (e: KeyboardEvent) => {
+    if (pendingAccent) {
+      const composed = composeAccent(pendingAccent, e.key)
+      if (composed) {
+        dispatch({ type: 'ADD_LETTER', letter: composed })
+      } else {
+        dispatch({ type: 'ADD_LETTER', letter: pendingAccent })
+        if (/^[a-zA-ZñÑ]$/.test(e.key)) {
+          dispatch({ type: 'ADD_LETTER', letter: e.key.toLowerCase() })
+        }
+      }
+      setPendingAccent(null)
+      return
+    }
+
     if (e.key === 'Enter') {
       dispatch({ type: 'SUBMIT_GUESS' })
     } else if (e.key === 'Backspace') {
       dispatch({ type: 'REMOVE_LETTER' })
-    } else if (/^[a-zA-Z]$/.test(e.key)) {
+    } else if (/^[a-zA-ZñÑáéíóúÁÉÍÓÚüÜ]$/.test(e.key)) {
       dispatch({ type: 'ADD_LETTER', letter: e.key.toLowerCase() })
+    } else if (e.key === 'Dead') {
+      const accent = e.shiftKey ? '¨' : '´'
+      setPendingAccent(accent)
     }
   }
 
@@ -211,5 +229,20 @@ function validateStoredState(parsed: State): boolean {
   return true
 }
 
+
+function composeAccent(accent: string, letter: string): string | null {
+  const map: Record<string, Record<string, string>> = {
+    '´': {
+      a: 'á', A: 'Á',
+      e: 'é', E: 'É',
+      i: 'í', I: 'Í',
+      o: 'ó', O: 'Ó',
+      u: 'ú', U: 'Ú',
+    },
+    // optional: add circumflex, tilde, grave, etc
+  }
+
+  return map[accent]?.[letter] ?? null
+}
 
 export default App;
