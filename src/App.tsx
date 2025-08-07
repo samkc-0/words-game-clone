@@ -391,6 +391,19 @@ function Keyboard({
   return (
     <div className="fixed top-2/3 flex flex-col items-center justify-center h-[40vh] w-full gap-1 p-2">
       <div className="flex gap-0.5 w-full">
+        {['á', 'é', 'í', 'ó', 'ú', 'ü'].map((letter) => (
+          <button
+            key={letter}
+            onClick={() => dispatch({ type: 'ADD_LETTER', letter })}
+            className={`keyboard-key flex-1 text-lg md:text-base h-12 ${getKeyColor(
+              letter,
+            )}`}
+          >
+            {letter.toUpperCase()}
+          </button>
+        ))}
+      </div>
+      <div className="flex gap-0.5 w-full">
         {['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'].map((letter) => (
           <button
             key={letter}
