@@ -25,6 +25,7 @@ type Action =
   | { type: 'REMOVE_LETTER' }
   | { type: 'SUBMIT_GUESS' }
   | { type: 'SET_WORD'; word: string }
+  | { type: 'CLEAR_INPUT' }
 
 const MAX_GUESSES = 6
 const WORD_LENGTH = 5
@@ -82,6 +83,9 @@ function reducer(state: State, action: Action): State {
     case 'REMOVE_LETTER':
       newState = { ...state, input: state.input.slice(0, -1) }
       break
+    case 'CLEAR_INPUT':
+      newState = { ...state, input: '' }
+      break
     case 'SUBMIT_GUESS':
       if (state.input.length !== WORD_LENGTH) return state
       if (state.input === state.word) {
@@ -122,7 +126,7 @@ function Rig() {
     const contentHeight = MAX_GUESSES * SPACING - (SPACING - 1) + PADDING
     const zoom = Math.min(
       size.width / contentWidth,
-      size.height / contentHeight
+      size.height / contentHeight,
     )
     ;(camera as any).zoom = zoom
     camera.updateProjectionMatrix()
@@ -134,12 +138,13 @@ export function App() {
   const [state, dispatch] = useReducer(reducer, initialState, init)
   const [pendingAccent, setPendingAccent] = useState<string | null>(null)
   const [guessedLetters, setGuessedLetters] = useState<Set<string>>(new Set())
+  const [waiting, setWaiting] = useState(false)
   useEffect(() => {
     if (state.word != null) return
     fetch('/api/daily')
       .then((res) => res.json())
       .then((data) =>
-        dispatch({ type: 'SET_WORD', word: data.word.toLowerCase() })
+        dispatch({ type: 'SET_WORD', word: data.word.toLowerCase() }),
       )
       .catch((error) => {
         console.error('Error fetching daily word:', error)
@@ -150,7 +155,29 @@ export function App() {
     setGuessedLetters(new Set(state.guesses.join('')))
   }, [state.guesses])
 
-  const handleKeyPress = (e: KeyboardEvent) => {
+  const handleSubmit = async () => {
+    if (state.input.length !== WORD_LENGTH) return
+    setWaiting(true)
+    await fetch('/api/check', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        guess: state.input,
+      }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.result === true) dispatch({ type: 'SUBMIT_GUESS' })
+        else dispatch({ type: 'CLEAR_INPUT' })
+      })
+      .catch((error) => console.error('Error checking guess:', error)) // Log the error
+      .finally(() => setWaiting(false))
+  }
+
+  const handleKeyPress = async (e: KeyboardEvent) => {
+    if (waiting) return
     if (pendingAccent) {
       const composed = composeAccent(pendingAccent, e.key)
       if (composed) {
@@ -166,7 +193,7 @@ export function App() {
     }
 
     if (e.key === 'Enter') {
-      dispatch({ type: 'SUBMIT_GUESS' })
+      await handleSubmit()
     } else if (e.key === 'Backspace') {
       dispatch({ type: 'REMOVE_LETTER' })
     } else if (/^[a-zA-ZñÑáéíóúÁÉÍÓÚüÜ]$/.test(e.key)) {
@@ -211,6 +238,7 @@ export function App() {
       <Keyboard
         dispatch={dispatch}
         guessedLetters={Array.from(guessedLetters)}
+        handleSubmit={handleSubmit}
       />
     </div>
   )
@@ -319,7 +347,7 @@ function validateStoredState(parsed: State): boolean {
 
   if (!['playing', 'won', 'lost'].includes(parsed.status)) {
     console.log(
-      `storedState.status was ${parsed.status}, want 'playing', 'won', or 'lost'`
+      `storedState.status was ${parsed.status}, want 'playing', 'won', or 'lost'`,
     )
     return false
   }
@@ -350,9 +378,11 @@ function composeAccent(accent: string, letter: string): string | null {
 function Keyboard({
   dispatch,
   guessedLetters,
+  handleSubmit,
 }: {
   dispatch: Dispatch<Action>
   guessedLetters: string[]
+  handleSubmit: () => void
 }): JSX.Element {
   const getKeyColor = (letter: string) => {
     return guessedLetters.includes(letter) ? 'bg-gray-500' : 'bg-gray-200'
@@ -366,7 +396,7 @@ function Keyboard({
             key={letter}
             onClick={() => dispatch({ type: 'ADD_LETTER', letter })}
             className={`keyboard-key flex-1 text-lg md:text-base h-12 ${getKeyColor(
-              letter
+              letter,
             )}`}
           >
             {letter.toUpperCase()}
@@ -379,7 +409,7 @@ function Keyboard({
             key={letter}
             onClick={() => dispatch({ type: 'ADD_LETTER', letter })}
             className={`keyboard-key flex-1 text-lg md:text-base h-12 ${getKeyColor(
-              letter
+              letter,
             )}`}
           >
             {letter.toUpperCase()}
@@ -388,7 +418,7 @@ function Keyboard({
       </div>
       <div className="flex gap-0.5 w-full">
         <button
-          onClick={() => dispatch({ type: 'SUBMIT_GUESS' })}
+          onClick={handleSubmit}
           className="keyboard-key enter-key flex-[1.5] text-lg md:text-base h-12 bg-gray-200"
         >
           ENTER
@@ -398,7 +428,7 @@ function Keyboard({
             key={letter}
             onClick={() => dispatch({ type: 'ADD_LETTER', letter })}
             className={`keyboard-key flex-1 text-lg md:text-base h-12 ${getKeyColor(
-              letter
+              letter,
             )}`}
           >
             {letter.toUpperCase()}
