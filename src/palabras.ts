@@ -16,6 +16,9 @@ export function getDailyWord(): string {
   return palabras[index]
 }
 
+export function validateGuess(guess: string) {
+  return palabras.includes(guess.toLowerCase())
+}
 function seededIndex(seed: number, max: number): number {
   const x = Math.sin(seed) * 10000
   return Math.floor((x - Math.floor(x)) * max)
