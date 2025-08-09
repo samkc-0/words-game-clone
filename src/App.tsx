@@ -389,13 +389,13 @@ function Keyboard({
   }
 
   return (
-    <div className="fixed top-2/3 flex flex-col items-center justify-center h-[40vh] w-full gap-1 p-2">
-      <div className="flex gap-0.5 w-full">
+    <div className="fixed bottom-0 flex flex-col items-center justify-end h-[40vh] w-full gap-1 p-2">
+      <div className="flex gap-0.5 w-1/2">
         {['á', 'é', 'í', 'ó', 'ú', 'ü'].map((letter) => (
           <button
             key={letter}
             onClick={() => dispatch({ type: 'ADD_LETTER', letter })}
-            className={`keyboard-key flex-1 text-lg md:text-base h-12 ${getKeyColor(
+            className={`keyboard-key flex-1 text-lg rounded-sm md:text-base h-12 ${getKeyColor(
               letter,
             )}`}
           >
@@ -408,7 +408,7 @@ function Keyboard({
           <button
             key={letter}
             onClick={() => dispatch({ type: 'ADD_LETTER', letter })}
-            className={`keyboard-key flex-1 text-lg md:text-base h-12 ${getKeyColor(
+            className={`keyboard-key flex-1 text-lg rounded-sm md:text-base h-12 ${getKeyColor(
               letter,
             )}`}
           >
@@ -421,7 +421,7 @@ function Keyboard({
           <button
             key={letter}
             onClick={() => dispatch({ type: 'ADD_LETTER', letter })}
-            className={`keyboard-key flex-1 text-lg md:text-base h-12 ${getKeyColor(
+            className={`keyboard-key flex-1 text-lg rounded-sm md:text-base h-12 ${getKeyColor(
               letter,
             )}`}
           >
@@ -432,7 +432,7 @@ function Keyboard({
       <div className="flex gap-0.5 w-full">
         <button
           onClick={handleSubmit}
-          className="keyboard-key enter-key flex-[1.5] text-lg md:text-base h-12 bg-gray-200"
+          className="keyboard-key enter-key flex-[1.5] text-lg rounded-sm md:text-base h-12 bg-gray-200"
         >
           ENTER
         </button>
@@ -440,7 +440,7 @@ function Keyboard({
           <button
             key={letter}
             onClick={() => dispatch({ type: 'ADD_LETTER', letter })}
-            className={`keyboard-key flex-1 text-lg md:text-base h-12 ${getKeyColor(
+            className={`keyboard-key flex-1 text-lg rounded-sm md:text-base h-12 ${getKeyColor(
               letter,
             )}`}
           >
@@ -449,7 +449,7 @@ function Keyboard({
         ))}
         <button
           onClick={() => dispatch({ type: 'REMOVE_LETTER' })}
-          className="keyboard-key backspace-key flex-[1.5] text-lg md:text-base h-12 bg-gray-200"
+          className="keyboard-key backspace-key flex-[1.5] text-lg rounded-sm md:text-base h-12 bg-gray-200"
         >
           ⌫
         </button>
