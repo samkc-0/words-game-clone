@@ -433,7 +433,7 @@ function Keyboard({
           onClick={handleSubmit}
           className="keyboard-key enter-key flex-[1.5] text-lg rounded-sm md:text-base h-12 bg-gray-200"
         >
-          ENTRAR
+          INTRO
         </button>
         {['z', 'x', 'c', 'v', 'b', 'n', 'm'].map((letter) => (
           <button
