@@ -389,7 +389,7 @@ function Keyboard({
 
   return (
     <div className="fixed bottom-0 flex flex-col items-center justify-end h-[40vh] w-full gap-1 p-2">
-      <div className="flex gap-0.5 w-1/2">
+      <div className="flex gap-0.5 w-6/10">
         {['á', 'é', 'í', 'ó', 'ú', 'ü'].map((letter) => (
           <button
             key={letter}
