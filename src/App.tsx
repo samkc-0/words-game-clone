@@ -112,7 +112,6 @@ function reducer(state: State, action: Action): State {
     default:
       return state
   }
-  console.log('Saving state:', newState)
   localStorage.setItem('state', JSON.stringify(newState))
   return newState
 }
