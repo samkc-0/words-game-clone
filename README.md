@@ -1,6 +1,6 @@
 # Palabrón
 
-![Palabrón screenshot](https://github.com/user-attachments/assets/0916db3b-ed0b-409b-9007-0b1c6000f537)
+<img alt="Palabrón screenshot" src="https://github.com/user-attachments/assets/0916db3b-ed0b-409b-9007-0b1c6000f537" width=300>
 
 Palabrón is a Wordle-style game focused on 5-letter words in Spanish. A lightweight Bun server serves the React front-end and validates guesses against a curated word
 list, so players can enjoy a fully Spanish experience with daily puzzles and accent support.
